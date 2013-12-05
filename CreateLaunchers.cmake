@@ -201,12 +201,16 @@ macro(_launcher_produce_vcproj_user)
 			_perconfig)
 		set(USERFILE_CONFIGSECTIONS)
 		foreach(USERFILE_CONFIGNAME ${CMAKE_CONFIGURATION_TYPES})
-			get_target_property(USERFILE_${USERFILE_CONFIGNAME}_COMMAND
-				${_targetname}
-				LOCATION_${USERFILE_CONFIGNAME})
-			file(TO_NATIVE_PATH
-				"${USERFILE_${USERFILE_CONFIGNAME}_COMMAND}"
-				USERFILE_${USERFILE_CONFIGNAME}_COMMAND)
+		    if(CMAKE_VER VERSION_LESS 2.8.12)
+			    get_target_property(USERFILE_${USERFILE_CONFIGNAME}_COMMAND
+				    ${_targetname}
+				    LOCATION_${USERFILE_CONFIGNAME})
+			    file(TO_NATIVE_PATH
+				    "${USERFILE_${USERFILE_CONFIGNAME}_COMMAND}"
+				    USERFILE_${USERFILE_CONFIGNAME}_COMMAND)
+			else()
+			    set(USERFILE_${USERFILE_CONFIGNAME}_COMMAND "$<TARGET_FILE:${_targetname}>")
+    		endif()
 			string(CONFIGURE "${_perconfig}" _temp @ONLY ESCAPE_QUOTES)
 			string(CONFIGURE
 				"${USERFILE_CONFIGSECTIONS}${_temp}"
@@ -215,9 +219,19 @@ macro(_launcher_produce_vcproj_user)
 		endforeach()
 
 
-		configure_file("${_launchermoddir}/${VCPROJ_TYPE}.user.in"
-			${VCPROJNAME}.${VCPROJ_TYPE}.${USERFILE_EXTENSION}
-			@ONLY)
+	    if(CMAKE_VER VERSION_LESS 2.8.12)
+		    configure_file("${_launchermoddir}/${VCPROJ_TYPE}.user.in"
+			    ${VCPROJNAME}.${VCPROJ_TYPE}.${USERFILE_EXTENSION}
+			    @ONLY)
+		else()
+		    configure_file("${_launchermoddir}/${VCPROJ_TYPE}.user.in.tmp"
+			    ${VCPROJNAME}.${VCPROJ_TYPE}.${USERFILE_EXTENSION}
+			    @ONLY)
+		    file(GENERATE OUTPUT "${_launchermoddir}/${VCPROJ_TYPE}.user.in"
+		        INPUT "${_launchermoddir}/${VCPROJ_TYPE}.user.in.tmp")
+		endif()
+		
+		endif()
 	endif()
 
 endmacro()
