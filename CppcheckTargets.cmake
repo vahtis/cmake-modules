@@ -31,7 +31,7 @@ endif()
 set(__add_cppcheck YES)
 
 if(NOT CPPCHECK_FOUND)
-	find_package(cppcheck QUIET)
+	find_package(cppcheck)
 endif()
 
 if(NOT CPPCHECK_FOUND)
@@ -183,10 +183,24 @@ function(add_cppcheck _name)
 			list(REMOVE_AT _input ${_unused_func})
 		endif()
 
+####
 		get_target_property(_cppcheck_includes "${_name}" INCLUDE_DIRECTORIES)
 		set(_includes)
 		foreach(_include ${_cppcheck_includes})
-			list(APPEND _includes "-I${_include}")
+			set(ignore_path "not_found")
+			foreach(_ignore_path  ${CPPCHECK_IGNORE_PATH})
+				if(${_ignore_path} STREQUAL ${_include})
+					 set(ignore_path "found")
+				endif()
+			endforeach()
+
+	               	if(${ignore_path} STREQUAL "not_found")
+				list(APPEND _includes "-I${_include}")
+				message("${_include} added " ${ignore_path})
+			else()
+				message("${_include} not added " ${ignore_path})				
+			endif()
+
 		endforeach()
 
 		get_target_property(_cppcheck_sources "${_name}" SOURCES)
@@ -199,6 +213,7 @@ function(add_cppcheck _name)
 			endif()
 		endforeach()
 
+
 		if("1.${CMAKE_VERSION}" VERSION_LESS "1.2.8.0")
 			# Older than CMake 2.8.0
 			add_test(${_name}_cppcheck_test
@@ -208,25 +223,26 @@ function(add_cppcheck _name)
 				${_files})
 		else()
 			# CMake 2.8.0 and newer
-			add_test(NAME
-				${_name}_cppcheck_test
-				COMMAND
-				"${CPPCHECK_EXECUTABLE}"
-				${CPPCHECK_TEMPLATE_ARG}
-				${_cppcheck_args}
-				${_files})
+#			add_test(NAME
+#				${_name}_cppcheck_test
+#				COMMAND
+#				"${CPPCHECK_EXECUTABLE}"
+#				${CPPCHECK_TEMPLATE_ARG}
+#				${_cppcheck_args}
+#				${_files})
 		endif()
 
-		set_tests_properties(${_name}_cppcheck_test
-			PROPERTIES
-			FAIL_REGULAR_EXPRESSION
-			"${CPPCHECK_FAIL_REGULAR_EXPRESSION}")
+#		set_tests_properties(${_name}_cppcheck_test
+#			PROPERTIES
+#			FAIL_REGULAR_EXPRESSION
+#			"${CPPCHECK_FAIL_REGULAR_EXPRESSION}")
 
 		add_custom_target(${_name}_cppcheck
 			COMMAND
 			${CPPCHECK_EXECUTABLE}
 			${CPPCHECK_QUIET_ARG}
 			${CPPCHECK_TEMPLATE_ARG}
+			${CPPCHECK_UNDEF}
 			${_cppcheck_args}
 			${_includes}
 			${_files}
