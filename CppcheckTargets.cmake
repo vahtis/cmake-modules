@@ -196,9 +196,6 @@ function(add_cppcheck _name)
 
 	               	if(${ignore_path} STREQUAL "not_found")
 				list(APPEND _includes "-I${_include}")
-				message("${_include} added " ${ignore_path})
-			else()
-				message("${_include} not added " ${ignore_path})				
 			endif()
 
 		endforeach()
